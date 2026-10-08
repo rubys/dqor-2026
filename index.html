@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Hidden 4GL — Deccan Queen on Rails 2026</title>
+<!-- The Hidden 4GL · Deccan Queen on Rails, Pune · 9 October 2026 · Sam Ruby
+     Slides and speaker notes are public. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap">
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ═══════════════════════ COVER · on screen 9:30–10:30 (registration; the chat is on the second screen) · ⏱ — ═══════════════════════ -->
+
+<section>
+  <p class="holding">Opening keynote</p>
+  <h1>The Hidden 4GL</h1>
+  <p class="big">Speaker: Sam Ruby</p>
+  <p>Friday, 09 October 2026, 10:30 IST. <span class="dim">Ends at 11:15 IST.</span></p>
+  <aside class="notes">
+    The deck is on screen from 9:30, through registration and चहा. The conference chat (a compiled
+    Campfire, more on that shortly) is on the second screen all day, both days.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ ACT 1 — IT'S REAL (no act card: open cold on the room) · ═══════════════════════ -->
+
+<section data-clock="0:00">
+    <h2>Post something in the room.</h2>
+  <p class="dim">The chat on the second screen. You've been using it since yesterday morning.</p>
+  <aside class="notes">
+    ⏱ 0:00 · Act 1, it's real.
+    Every attendee was invited to the conference chat before the event, and it has been on the second screen
+    during every session. The talk opens by asking the room to post in it, while the main screen shows the
+    chat's own /runtime dashboard: requests and WebSocket connections arriving as people type.
+    Many in the room already knew the chat was compiled. The point isn't the reveal; it's that they have been
+    the test.
+  </aside>
+</section>
+
+<section data-visibility="hidden">
+  <h2>The room you've been chatting in</h2>
+  <div class="cols">
+    <table class="cmp">
+      <tr><th>since the doors opened</th><th></th></tr>
+      <tr><td>requests</td><td>96,102</td></tr>
+      <tr><td>people · messages</td><td>83 · 181</td></tr>
+      <tr><td>WebSockets opened</td><td>1,583</td></tr>
+      <tr><td>server errors · restarts</td><td>2 · 0</td></tr>
+      <tr><td>memory, right now</td><td>174 MiB</td></tr>
+      <tr><td>p95 handler time</td><td>5.5 ms</td></tr>
+    </table>
+<pre class="fragment"><code><mark># the room's own dashboard, /runtime</mark>
+/app/campfire     ELF native executable
+process maps      no Ruby interpreter,
+                  no libruby
+processes         1, with 8 threads
+container limit   2 cores, 1 GiB
+CPU right now     1.5% of one core</code></pre>
+  </div>
+  <p class="fragment"><strong>Basecamp's Campfire, plus twenty-three commits from the organizers</strong> —
+  their sign-in, their branding, this dashboard. Written in Rails. Then compiled.</p>
+  <p class="fragment">One process. No Ruby in it. No Redis. <span class="dim">You've been the test.</span></p>
+  <aside class="notes">
+    The room's /runtime dashboard as a still, used if the network won't cooperate. Numbers are a snapshot;
+    they are refreshed the morning of the talk.
+    "Memory" is resident memory, the sum of process RSS. The deployed app is Basecamp's ONCE Campfire plus the
+    organizers' commits (Google sign-in, the Deccan Queen theme, this dashboard, HTTPS-only cookies). No model
+    changed. The organizers changed the Rails; the compiler produced the binary; nobody edited C.
+    The organizers' write-up: Vipul A M, "Running Campfire With Roundhouse and Spinel", Saeloun blog,
+    2026-10-04, https://blog.saeloun.com/2026/10/04/running-campfire-with-roundhouse-and-spinel/
+    It has its own numbers and an honest caution: "We have no controlled Rails-versus-native benchmark or
+    capacity claim." It also found a real runtime gap: cookies.permanent was a no-op, so sign-in didn't survive
+    a browser restart. Fixed in Roundhouse on 2026-10-06 (commit 37bb4c5b).
+  </aside>
+</section>
+
+<section data-visibility="hidden">
+  <span class="tag">alternate · if the room fell over</span>
+  <h2>The room you've been chatting in</h2>
+  <p>It went down — <em>when, and why, one line</em>.</p>
+  <p>Every test Basecamp wrote passes. A comparator checks every page against real Rails.
+  <strong>None of them found this. You did.</strong></p>
+  <aside class="notes">
+    Used only if the room fell over during the conference. Every test Basecamp wrote passes, and a comparator
+    checks every page against real Rails; a room full of real people is a different test.
+  </aside>
+</section>
+
+<section style="text-align:center">
+  <h2 class="understated">Take out your phone.</h2>
+  <div class="qr-card">
+    <img src="assets/blog-qr.svg" alt="QR code for rubys.github.io/roundhouse/blog" />
+  </div>
+  <p class="url">rubys.github.io/roundhouse/blog</p>
+  <aside class="notes">
+    ⏱ ~1:00.
+    Second claim: the same kind of app, in your phone's browser, with no server. "Create an article. Anything."
+    The blog is a Rails app compiled to run entirely in the browser: rubys.github.io/roundhouse/blog
+  </aside>
+</section>
+
+<section>
+  <div class="solo">
+    <iframe src="/roundhouse/blog/" title="the blog"></iframe>
+  </div>
+  <aside class="notes">
+    It's just a blog: index, show, new. Nothing surprising, deliberately; an ordinary Rails app.
+  </aside>
+</section>
+
+<section>
+  <div class="duo">
+    <iframe src="/roundhouse/blog/" title="blog left"></iframe>
+    <iframe src="/roundhouse/blog/" title="blog right"></iframe>
+  </div>
+  <aside class="notes">
+    Create an article in the left pane and it appears in the right: Turbo Streams, with Action Cable's role
+    played by a BroadcastChannel out of a shared worker. Two iframes, one running Rails app, one database,
+    all inside the browser. "You just wrote to a database. All of you at once. Whose server is that?"
+  </aside>
+</section>
+
+<section>
+  <pre class="ladder"><code>Beautiful Ruby  (has_many :comments)
+        │
+        ▼
+   Roundhouse IR  (typed, effect-annotated)
+        │
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/rust.tgz">Rust</a>        ─▶ rustc       ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/typescript.tgz">TypeScript</a>  ─▶ V8          ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/crystal.tgz">Crystal</a>     ─▶ LLVM        ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/elixir.tgz">Elixir</a>      ─▶ BEAM        ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/go.tgz">Go</a>          ─▶ gc          ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/python.tgz">Python</a>      ─▶ CPython     ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/csharp.tgz">C#</a>          ─▶ RyuJIT      ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/kotlin.tgz">Kotlin</a>      ─▶ JVM         ─▶ machine code
+        ├─▶ <a href="https://rubys.github.io/roundhouse/browse/swift.tgz">Swift</a>       ─▶ LLVM        ─▶ machine code
+        └─▶ <a href="https://rubys.github.io/roundhouse/browse/spinel.tgz">typed Ruby</a>  ─▶ Spinel ─▶ C ─▶ machine code   ← the room you're chatting in</code></pre>
+  <aside class="notes">
+    A few seconds, for context: "ten targets" comes up later. From the RubyConf 2026 deck
+    (rubys.github.io/rubyconf-2026/#/8). The bottom row is the path that serves the chat on the second screen.
+    Every language here is a link to that target's .tgz: the transpiled app plus its test suite. That's the
+    evidence to download.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">answered once · performance</span>
+  <table class="cmp">
+    <tr><th></th><th>Campfire, as deployed</th><th>compiled</th><th>multiple</th></tr>
+    <tr><td>room page</td><td>291 req/s</td><td>4,007</td><td>14×</td></tr>
+    <tr><td>messages page</td><td>604 req/s</td><td>6,522</td><td>11×</td></tr>
+    <tr><td>cold start</td><td>4.7 s</td><td>0.34 s</td><td>14×</td></tr>
+    <tr><td>memory, under load</td><td>2,078 MB</td><td>181 MB</td><td>11× less</td></tr>
+  </table>
+  <p class="dim">Against Campfire as its own Dockerfile runs it: Thruster, Puma workers, Redis. Ours is one process.</p>
+  <p class="fragment"><strong>And against a hand port?</strong>
+  <span class="dim">Same machine, later.</span></p>
+  <aside class="notes">
+    ⏱ ~3:30.
+    The compiled (Spinel) binary against Campfire as its own Dockerfile runs it: Thruster in front of Puma,
+    four workers of five threads, jemalloc, resque-pool, Redis. The binary is one process.
+    Source: rubys.github.io/roundhouse/bench/campfire/ (run 20261007-202924, commit 8fda5b888e69). AMD Ryzen 5 3600, boost disabled; 16 concurrent clients; median of three 20-second runs.
+    "Memory, under load" is the largest PSS either lane reached across the benchmark. Rails' Redis (about 16 MB)
+    sits outside its process tree and isn't counted; the binary's cache and cable registry are inside its own.
+    The question the rest of the talk answers: how? The hand port comes on "Backus's number".
+  </aside>
+</section>
+
+<section>
+  <p class="big">How?</p>
+  <aside class="notes">
+    One word, then the title slide, which is the answer.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ ACT 2 — IT'S OLD (the title slide is the act card) · ⏱ 4:30 ═══════════════════════ -->
+
+<section data-clock="4:30">
+  <h1>The Hidden 4GL</h1>
+  <h3>Rails has been a fourth-generation language all along.<br>We never noticed, because it was hiding inside a third.</h3>
+  <p class="sourceline">Sam Ruby · Deccan Queen on Rails · Pune · October 2026</p>
+  <aside class="notes">
+    ⏱ 4:30 · Act 2, the dream.
+    The answer to "how?": Rails has been a fourth-generation language all along.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">fifty-one years apart</span>
+  <div class="cols">
+    <div>
+      <h3>FOCUS, 1975</h3>
+<pre><code>TABLE FILE EMPLOYEE
+SUM SALARY
+BY DEPARTMENT
+IF SALARY GT 30000
+END</code></pre>
+    </div>
+    <div>
+      <h3>Rails, 2026</h3>
+<pre><code>Employee
+  .where("salary > ?", 30000)
+  .group(:department)
+  .sum(:salary)</code></pre>
+    </div>
+  </div>
+  <p class="fragment">Same statement. Same domain. Fifty-one years.</p>
+  <aside class="notes">
+    FOCUS (Information Builders, 1975) beside Active Record. Oracle Forms, PowerBuilder and Informix-4GL had
+    large practices in Indian enterprise IT; some of this room wrote them.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">generation one and two · PDP-8</span>
+  <div class="cols">
+    <div>
+      <h3>Machine code, toggled in</h3>
+<pre><code>0200  7200
+0201  1205
+0202  1206
+0203  3207
+0204  7402
+0205  0007
+0206  0005
+0207  0000</code></pre>
+    </div>
+    <div>
+      <h3>PAL-III assembler</h3>
+<pre><code>        *200
+START,  CLA
+        TAD A
+        TAD B
+        DCA SUM
+        CLA HLT
+A,      7
+B,      5
+SUM,    0</code></pre>
+    </div>
+  </div>
+  <p class="fragment">Same bits. One line still equals one instruction.
+  The assembler gave them names.</p>
+  <aside class="notes">
+    Two generations on one slide, because the relationship is the point. Front-panel switches: address,
+    deposit, address, deposit. The program adds 7 and 5. The assembler changed the names, not the bits.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">generation three · 1957 · FORTRAN</span>
+<pre><code>C     SUM FIVE NUMBERS AND PRINT THE TOTAL
+      DIMENSION VALS(5)
+      TOTAL = 0.0
+      DO 20 I = 1, 5
+   20 TOTAL = TOTAL + VALS(I)
+      PRINT 30, TOTAL
+   30 FORMAT (1H , 8HTOTAL IS, F10.2)
+      END</code></pre>
+  <p>In assembler, one line was one instruction. Here a line is a formula,
+  and a <strong>compiler</strong> decides.</p>
+  <p class="fragment dim">The objection in 1957: no compiler could emit code fast enough to be worth using.
+  Backus's team spent most of their effort answering it.</p>
+  <aside class="notes">
+    Machine code, then assembler, then this: a line is a formula, and a compiler decides the instructions.
+    The next slide is the 1957 objection, and today's measurement against it.
+  </aside>
+</section>
+
+<section>
+  <h2>Backus's number</h2>
+  <blockquote style="font-size:0.8em">If FORTRAN produced an object program only half as fast as its hand coded counterpart,
+  then acceptance of our system would be in serious danger.
+  <span class="cite">— John Backus, <em>The History of FORTRAN I, II, and III</em></span></blockquote>
+  <table class="cmp fragment" style="font-size:0.62em">
+    <tr><th>Campfire · same machine, same harness · req/s</th><th>Rails</th><th>transpiled to Ruby</th><th>hand port</th></tr>
+    <tr><td>room page</td><td>291</td><td>4,138</td><td>3,766</td></tr>
+    <tr><td>messages page</td><td>604</td><td>7,602</td><td>7,920</td></tr>
+    <tr><td>sidebar</td><td>510</td><td>3,461</td><td>9,399</td></tr>
+  </table>
+  <p class="fragment" style="font-size:0.8em">Ahead on one page, level on one, 2.7× behind on one. The day before, the room page was 4.4× behind.
+  <span class="dim">The bar, from someone who has already written the fast version: getting close may be good enough.</span></p>
+  <p class="fragment" style="font-size:0.8em">FORTRAN didn't close that gap with one team.
+  <strong>It closed it with everyone who used it.</strong></p>
+  <aside class="notes">
+    The quote: John Backus, "The History of FORTRAN I, II, and III" (HOPL, 1978).
+    The table: rubys.github.io/roundhouse/bench/campfire/ (run 20261007-202924, commit 8fda5b888e69). Rails as its own Dockerfile runs it; Roundhouse's CRuby output in the same Puma
+    shape (four workers of five threads); Tobi Lütke's hand port (tobi/campfire-once-ruby-ractor: plain Ruby,
+    no Rails, Falcon serving from worker Ractors in one process). Same seeded database, same box, 16 clients,
+    median of three runs. The rest: search 312 / 4,514 / 3,491; post a message 284 / 1,159 / 1,110; the
+    avatar, a stylesheet and /up are well behind the hand port, which is the Puma and Rack layer, not the app.
+    Two honest caveats. The transpiled Ruby runs Rails' worker count, but broadcasts don't yet cross workers, so
+    that's a runtime comparison, not how you'd deploy it today; one process on every core (Falcon on Ractors)
+    is the plan. And the hand port deliberately renders no CSRF tokens, so its pages carry about 8% fewer tags.
+    The day before, on Tobi's own harness ("Keep the Gems", intertwingly.net, 2026-10-06), the room page was
+    266 req/s against his 1,167: 4.4× behind. A day of profiling found it: deferred preloading, gzip spliced from
+    pre-compressed fragments, memoized verifiers, a router precheck, and web push moved off the request.
+    "Getting close may be good enough" is Tobi's priority as summarized in that post.
+    A year after FORTRAN's release, over half of twenty-six IBM 704 installations used it for more than half
+    their problems. The last line is the reason for act 5: who builds it.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">generation four · 1975–1995</span>
+  <h2>Say <em>what</em>, not <em>how</em>.</h2>
+  <p>dBase, Clipper, FoxPro. Informix-4GL. Progress. Natural.
+  FOCUS. PowerBuilder. Oracle Forms. IBM's CSP.</p>
+  <p>And SQL — the one that survived, which is the tell.</p>
+  <p class="fragment big">A database. Some forms. Some reports. Some rules.</p>
+  <p class="fragment dim">The only domain anyone has ever gotten a declarative language to work in.
+  It is also, exactly, the domain of Rails.</p>
+  <aside class="notes">
+    SQL is in the list on purpose; "Except one" comes back to it. CSP is last because it's the one I saw
+    from the inside.
+  </aside>
+</section>
+
+<section>
+  <h2>The ladder stopped</h2>
+<pre class="timeline"><code>1945   machine code        ENIAC, toggled in
+1949   assembler           names for the bits
+1957   FORTRAN             a compiler decides
+<b>1975   FOCUS · SQL         say what, not how</b>
+1995   the last new 4GL ships
+2004   Rails
+2026</code></pre>
+  <p>Three generations in twelve years. A fourth that took twenty, and died.</p>
+  <p class="fragment">Then nothing — <em>at the language level.</em>
+  <span class="fragment dim">By 2004, even the word was gone.</span></p>
+  <aside class="notes">
+    Fast, fast, fast, slow, stop. Nobody examined Rails and decided it wasn't a 4GL; the word had simply
+    gone out of use. Between 1995 and 2004, a screen bound to a table took a week again.
+    This layout comes back in act 5.
+  </aside>
+</section>
+
+<section>
+  <h2>Where the fourth generation went</h2>
+<pre><code>Article.where("published_at &lt; ?", Time.now)   <mark># SQL, in a string</mark>
+%r{^/articles/(\d+)$}                          <mark># a regex, in a literal</mark>
+field :email, String, null: false              <mark># GraphQL, in a class body</mark>
+data-action="click-&gt;composer#send"             <mark># Stimulus, in an attribute</mark>
+has_many :comments                             <mark># ?</mark></code></pre>
+  <p>It didn't die. It moved in — as a guest inside a third-generation host.</p>
+  <p class="fragment">And the host's tools can't see into a guest.
+  <strong>Your Ruby LSP cannot type that SQL string.</strong></p>
+  <aside class="notes">
+    Each line is a different language living inside Ruby, invisible to Ruby's tools. Act 4 comes back to
+    this slide: the guests talk to each other, and nothing checks where they meet.
+  </aside>
+</section>
+
+<section>
+  <h2>Eight lines</h2>
+  <span class="gen">app/models/message.rb · the room you've been chatting in</span>
+<pre><code>class Message &lt; ApplicationRecord
+  include Attachment, Broadcasts, Mentionee, Pagination, Searchable
+  <mark>belongs_to :room, touch: true</mark>
+  <mark>belongs_to :creator, class_name: "User", default: -> { Current.user }</mark>
+  has_many :boosts, dependent: :destroy
+  has_rich_text :body
+  scope :ordered, -> { order(:created_at) }
+end</code></pre>
+  <p>Those are not calls.</p>
+  <p class="fragment"><strong>A 4GL statement, delivered as a library.</strong>
+  The same line a Progress programmer wrote in 1990,
+  and it took an afternoon for the same reason.</p>
+  <aside class="notes">
+    Campfire's Message model, verbatim. touch: true is a cache-invalidation policy;
+    default: -> { Current.user } is an authorship rule. Those lines are declarations, not code.
+  </aside>
+</section>
+
+<section>
+  <p class="big">A framework is a language without a compiler.</p>
+  <aside class="notes">
+    The thesis in seven words.
+  </aside>
+</section>
+
+<section>
+  <h2>The bill</h2>
+  <p>Three things a compiler does that a library cannot.</p>
+  <ul>
+    <li>A compiler <strong>answers once</strong>. A library re-answers.</li>
+    <li>A compiler <strong>sees the whole program</strong>. A library sees the call it's in.</li>
+    <li>A compiler <strong>can change the target</strong>. A library is bound to its host.</li>
+  </ul>
+  <aside class="notes">
+    Three things a compiler does that a library cannot. Each comes back: answering once is the performance
+    table, the whole program is the seams in act 4, changing the target is the ten languages.
+  </aside>
+</section>
+
+<section>
+  <h2>Rails is to web applications<br>what SQL is to data.</h2>
+  <p>SQL has a compiler. It's called the query planner.</p>
+  <p class="dim">Who here has ever tuned a query without changing the SQL?</p>
+  <aside class="notes">
+    SQL is the declarative language that won, and its compiler is the query planner.
+    Why it survived is "Except one", two slides on.
+  </aside>
+</section>
+
+<section>
+  <h2>So why did they die?</h2>
+  <p>Not because declarative was wrong.</p>
+  <ul class="fragment">
+    <li>The compilers were the expensive part. <strong>Every target was a team.</strong></li>
+    <li>Revenue was runtime licenses. No reason to compile you onto anyone else's platform.</li>
+    <li>Green screens → Windows → the web. One target, one vendor: they didn't move.</li>
+  </ul>
+  <aside class="notes">
+    The vendors' business model was structurally opposed to the portability that would have saved the
+    language.
+  </aside>
+</section>
+
+<section>
+  <h2>Except one</h2>
+  <p class="big">SQL had many vendors and no owner.</p>
+  <p>Competitors shared the cost of the compiler. When the platform moved, SQL moved with it.</p>
+  <p class="fragment">IBM's CSP ran on every IBM platform.
+  <strong>Many targets. One owner.</strong> It never died, and it never became SQL.</p>
+  <aside class="notes">
+    CSP, first-hand: I worked at IBM in the 1990s alongside the group that developed and maintained it.
+    Two variables: many targets (CSP had them) and many keepers (only SQL had them). Act 5 is about the
+    second.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ ACT 3 — WHY NOW? · ⏱ 15:00 ═══════════════════════ -->
+
+<section data-clock="15:00">
+  <h1>Why now?</h1>
+  <p class="dim">Fifty years of the same dream. What changed?</p>
+  <aside class="notes">
+    ⏱ 15:00 · Act 3, why now.
+    The answer: agents made the compiler cheap, and a compiler, unlike a prompt, is deterministic.
+  </aside>
+</section>
+
+<section>
+  <h2>If Rails is a 4GL that is still an interpreter,<br>the question of the 1990s is back.</h2>
+  <p class="big">Can you afford the compiler?</p>
+  <aside class="notes">
+    Back to Backus. In 1957 the answer was yes; for the 4GLs of the 1990s it was no. It was never a fact
+    about compilers, only about what one costs.
+  </aside>
+</section>
+
+<section>
+  <h2>What the same job cost this year</h2>
+  <ul>
+    <li><strong>Ten targets</strong>, started by one person with agents. No team — at first.</li>
+    <li>Issues flowing both ways with Matz's compiler — <strong>including four Matz filed against mine.</strong></li>
+  </ul>
+  <p class="fragment big">The ladder stopped because the compiler was the expensive part.
+  It isn't anymore.</p>
+  <aside class="notes">
+    Matz filed four issues against Roundhouse: #73–#75 (2026-09-06) and #132 (2026-09-25). Spinel is his
+    Ruby-to-C compiler: github.com/matz/spinel. "At first" sets up act 5.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">why now</span>
+  <h2>Agents build it. The compiler ships it.</h2>
+  <ul>
+    <li>This compiler was written with agents. So were most of the 357 pull requests from other people.</li>
+    <li>Every one held the agent to a reference: real Rails, Basecamp's tests, a before-and-after run.</li>
+  </ul>
+  <p class="fragment big">What ships is the compiler's output, not the agent's.</p>
+  <aside class="notes">
+    Not anti-agent. The contrast is between what an agent writes once and checks against a reference, and
+    what a prompt writes again every time. Every outside pull request held its agent to a reference: real
+    Rails, Basecamp's tests, or a before-and-after run. The count is merged pull requests from authors other
+    than me, as of the talk.
+  </aside>
+</section>
+
+<section>
+  <h2>The as-if rule</h2>
+  <p class="big">A compiler may change anything you can't observe.</p>
+  <p>C++ writes down what "observable" means, in a standard. Ruby doesn't have one.</p>
+  <p class="fragment"><strong>So the standard is the app:</strong> real Rails beside the binary,
+  and every test Basecamp wrote.</p>
+  <p class="fragment dim">406 of 406, on the binary. Their assertions, not mine.</p>
+  <aside class="notes">
+    Aaron Patterson's framing, from his Rails World 2026 closing keynote. C++ calls it the as-if rule; the
+    standard defines what is observable. For a Rails app, the reference is real Rails and the app's own tests.
+    Campfire's test suite against the compiled binary: rubys.github.io/roundhouse/bench/campfire-suite-spinel/
+  </aside>
+</section>
+
+<section>
+  <h2>What sits at the top of the drill?</h2>
+  <table class="cmp">
+    <tr><th>Campfire</th><th>in Rails</th><th>compiled to C</th></tr>
+    <tr><td>size</td><td>~60k tokens</td><td>~4M tokens</td></tr>
+    <tr><td>lines that mention boosts</td><td>20, in 13 files</td><td>1,220</td></tr>
+  </table>
+  <p class="fragment">Same Rails twice: <strong>the same C.</strong> Same prompt twice: <strong>two programs.</strong></p>
+  <blockquote class="fragment"><strong>There is no as-if rule for your English.</strong>
+  <span class="cite">— Aaron Patterson, Rails World 2026 closing keynote</span></blockquote>
+  <aside class="notes">
+    Size of the same Campfire, as Rails and as compiled C, and how many lines mention boosts in each.
+    Compiling the same Rails twice gives the same C. The same prompt twice gives two programs.
+    The quote is Aaron Patterson's, Rails World 2026 closing keynote. Samuel Williams calls this
+    "semantic compression".
+  </aside>
+</section>
+
+<section>
+  <span class="gen">why I care</span>
+  <h2>A requirement nobody anticipated</h2>
+  <p>I wrote a Rails app to schedule dance competitions. Then the judges needed to score with no wifi.</p>
+  <p class="fragment">Offline means the browser, or a phone. Places Ruby doesn't run.</p>
+  <p class="fragment big">A new requirement changed the target, and the target changed the language.</p>
+  <p class="fragment dim">Port it, and now you keep two apps. Compile it, and you still keep one.</p>
+  <aside class="notes">
+    The first-person story. I wrote Showcase, a Rails app that schedules and runs dance competitions:
+    scheduling, invoicing, scoring, each event hosted near it. Judges needed to score with no wifi, and each
+    judge's scores are independent, so offline is safe. Offline means the browser or a phone, where Ruby
+    doesn't run. Ruby2JS came first; needing real type inference is how Roundhouse began.
+    More in "Rust is the answer to the wrong question" (intertwingly.net, 2026-09-30). This is also why the blog
+    ran on phones in act 1.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">why now · from a prompt to a binary</span>
+  <h2>A prompt becomes a Rails app.<br>Could it become a binary, too?</h2>
+  <div class="cols" style="font-size:0.62em">
+    <div>
+      <h3>This week</h3>
+      <ul>
+        <li>A filter that names a method nothing defines is now an error. Rails answered 500;
+          the compiled app had <strong>silently dropped the guard.</strong></li>
+        <li>Rails 8's authentication generator now compiles. 11 of the 12 tests it writes pass on the binary.</li>
+        <li>Rails' own defaults found in an afternoon what months of a hand-written app hadn't.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Not yet</h3>
+      <ul>
+        <li>Nobody has run a generator's real output through the compiler.</li>
+        <li><code>root_url</code> with no root route is still only a warning.</li>
+        <li>Whether a binary helps someone who described their app in a sentence.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="fragment" style="font-size:0.75em">What we could build: a corpus of generated apps → fix what blocks them →
+  <code>check</code> in the verify loop → a compiled image at export.
+  <span class="dim">An invitation, not an announcement.</span></p>
+  <aside class="notes">
+    Hifumi (github.com/pstrzalk/hifumi-dev) is Paweł Strzałkowski's prompt-to-Rails generator; his talk
+    "From Prompt to Rails" was the day before. Post: "Generated Rails" (intertwingly.net, 2026-10-04).
+    Why this is a seam: a generated app names things the framework or a gem is supposed to supply
+    (authenticate_user! from Devise; authenticate_by and the reset token from has_secure_password).
+    The details: the undefined-filter error is commit 65cc85c1, and is quiet on Mastodon, Lobsters, Campfire
+    and Discourse. The authentication generator is pinned in tests/rails8_authentication.rs (commit 16ebe6a9):
+    passwords 7/7, user 1/1, sessions 3/4; the fourth is a known cookie difference ("" vs nil).
+    The third "Not yet" is a question for people who generate apps, not for me.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ ACT 4 — BIGGER THAN RAILS · ⏱ 22:30 ═══════════════════════ -->
+
+<section data-clock="22:30">
+  <h1>Bigger than Rails</h1>
+  <p class="dim">A Rails app is more than Ruby.</p>
+  <aside class="notes">
+    ⏱ 22:30 · Act 4, bigger than Rails.
+    Marco Roth closed the first day with "Herb in Rails 8.2: Your ERB Views, Now HTML-Aware".
+  </aside>
+</section>
+
+<section>
+  <span class="gen">the seams</span>
+  <h2>The guests talk to each other</h2>
+<pre style="font-size:0.5em"><code>"rooms-list:unread@window-&gt;badge-dot#update"   <mark># JavaScript, wired in a Ruby helper</mark>
+&lt;a action="soft-keyboard#open"&gt;                <mark># ERB, read by Stimulus</mark>
+field :first_voter, UserType, null: false      <mark># GraphQL, answered in Ruby</mark>
+before_action :authenticate_user!              <mark># a gem's method, named by an app without it</mark></code></pre>
+  <p>Each guest has its own parser now: Prism, Herb, Oxc, graphql-ruby.
+  Each one checks its own notation.</p>
+  <p class="fragment"><strong>Nothing checks the seams.</strong> Three of those four lines are bugs.
+  <span class="dim">And a differential oracle is blind wherever both sides run the same code.</span></p>
+  <aside class="notes">
+    Back to act 2's "Where the fourth generation went", which ended on a GraphQL field. Top to bottom:
+    Campfire's real JavaScript wiring, written in a Ruby helper (sidebar_helper.rb), and the next two slides.
+    Campfire's messages/boosts/_boosts.html.erb: link_to … action: renders &lt;a action=…&gt;, but Stimulus reads
+    data-action, so the inline "add a boost" link never runs soft-keyboard#open. Found by Herb's helper
+    expansion; a real bug at Campfire 90b3300, a one-line fix.
+    A GraphQL type from a tutorial app, with a mistake I planted (object.votes.first&amp;.user behind null: false).
+    Hifumi's Event RSVP app (project 27 in its docs): Devise's filter without Devise. A real bug; Rails answers 500.
+    "Three of four are bugs" counts the planted one; two of them shipped.
+    The last fragment: Campfire's JavaScript ships unchanged in both the compiled app and the Rust port, so a
+    fetch(url, { as: "json" }) bug passed all 5,018 of the port's parity cells.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">the seams · strings all the way down</span>
+  <style>
+.w-box{fill:#1a2228;stroke:#2b363d;stroke-width:1.2}.w-box.w-js{stroke:#82b2ff}
+.w-t{fill:#e7e3d9;font:500 13px "IBM Plex Mono",monospace}.w-s{fill:#8b949b;font:11px "IBM Plex Sans",sans-serif}
+.w-h{fill:#8b949b;font:500 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase}
+.w-lbl{fill:#e7e3d9;font:11px "IBM Plex Mono",monospace}
+.w-e{fill:none;stroke:#8b949b;stroke-width:1.6}.w-e.w-ruby{stroke:#ff7d90}.w-e.w-erb{stroke:#e7c36b}.w-e.w-js{stroke:#82b2ff;stroke-width:2.8}
+.wkey{font-family:"IBM Plex Mono",monospace;font-size:0.42em;color:var(--dim);display:flex;gap:2.2em;margin-top:0.4em}
+.wkey b{font-weight:400}
+</style><svg style="height:470px;width:auto;max-width:100%;display:block;margin:0 auto" viewBox="0 0 1000 545" role="img" aria-label="Eleven links between Stimulus controllers: nine event links and two outlets. Eight of the eleven are declared in Ruby helper methods rather than in templates.">
+        <defs>
+          <marker id="d2-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ff7d90"/></marker>
+          <marker id="d2-e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e7c36b"/></marker>
+          <marker id="d2-j" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#82b2ff"/></marker>
+        </defs>
+        <text class="w-h" x="120" y="20" text-anchor="middle">dispatches</text>
+        <text class="w-h" x="500" y="20" text-anchor="middle">listens and dispatches</text>
+        <text class="w-h" x="880" y="20" text-anchor="middle">listens</text>
+
+        <!-- column A -->
+        <rect class="w-box w-js" x="10" y="40" width="220" height="40" rx="6"/><text class="w-t" x="22" y="57">presence</text><text class="w-s" x="22" y="72">PresenceChannel subscriber</text>
+        <rect class="w-box w-js" x="10" y="110" width="220" height="40" rx="6"/><text class="w-t" x="22" y="127">read-rooms</text><text class="w-s" x="22" y="142">ReadRoomsChannel subscriber</text>
+        <rect class="w-box w-js" x="10" y="200" width="220" height="40" rx="6"/><text class="w-t" x="22" y="217">notifications</text><text class="w-s" x="22" y="232">web push subscription</text>
+        <rect class="w-box w-js" x="10" y="290" width="220" height="40" rx="6"/><text class="w-t" x="22" y="307">refresh-room</text><text class="w-s" x="22" y="322">HeartbeatChannel · visibility</text>
+        <rect class="w-box w-js" x="10" y="390" width="220" height="40" rx="6"/><text class="w-t" x="22" y="407">drop-target</text><text class="w-s" x="22" y="422">files dragged over the window</text>
+        <rect class="w-box w-js" x="10" y="470" width="220" height="40" rx="6"/><text class="w-t" x="22" y="487">reply</text><text class="w-s" x="22" y="502">reply button on a message</text>
+
+        <!-- column B -->
+        <rect class="w-box w-js" x="390" y="65" width="220" height="40" rx="6"/><text class="w-t" x="402" y="82">rooms-list</text><text class="w-s" x="402" y="97">UnreadRoomsChannel subscriber</text>
+        <rect class="w-box w-js" x="390" y="245" width="220" height="40" rx="6"/><text class="w-t" x="402" y="262">turbo-frame</text><text class="w-s" x="402" y="277">load or reload a frame</text>
+        <rect class="w-box w-js" x="390" y="400" width="220" height="40" rx="6"/><text class="w-t" x="402" y="417">composer</text><text class="w-s" x="402" y="432">message form · 217 lines</text>
+        <rect class="w-box w-js" x="390" y="485" width="220" height="40" rx="6"/><text class="w-t" x="402" y="502">messages</text><text class="w-s" x="402" y="517">message list · 190 lines</text>
+
+        <!-- column C -->
+        <rect class="w-box w-js" x="770" y="40" width="220" height="40" rx="6"/><text class="w-t" x="782" y="57">badge-dot</text><text class="w-s" x="782" y="72">unread dot</text>
+        <rect class="w-box w-js" x="770" y="110" width="220" height="40" rx="6"/><text class="w-t" x="782" y="127">sorted-list</text><text class="w-s" x="782" y="142">sidebar order</text>
+        <rect class="w-box w-js" x="770" y="485" width="220" height="40" rx="6"/><text class="w-t" x="782" y="502">sound</text><text class="w-s" x="782" y="517">/play sounds</text>
+
+        <!-- edges -->
+        <path class="w-e w-ruby" d="M230,60 L388,80" marker-end="url(#d2-r)"/><text class="w-lbl" x="306" y="58" text-anchor="middle">presence:present</text>
+        <path class="w-e w-ruby" d="M230,130 L388,92" marker-end="url(#d2-r)"/><text class="w-lbl" x="306" y="132" text-anchor="middle">read-rooms:read</text>
+        <path class="w-e w-erb" d="M610,78 L768,60" marker-end="url(#d2-e)"/><text class="w-lbl" x="690" y="58" text-anchor="middle">rooms-list:read/:unread</text>
+        <path class="w-e w-erb" d="M610,92 L768,130" marker-end="url(#d2-e)"/><text class="w-lbl" x="690" y="131" text-anchor="middle">rooms-list:unread</text>
+        <path class="w-e w-erb" d="M230,220 L388,258" marker-end="url(#d2-e)"/><text class="w-lbl" x="300" y="222" text-anchor="middle">notifications:ready</text>
+        <path class="w-e w-ruby" d="M230,302 L388,272" marker-end="url(#d2-r)"/><text class="w-lbl" x="318" y="275" text-anchor="middle">refresh-room:visible</text>
+        <path class="w-e w-ruby" d="M230,318 L388,414" marker-end="url(#d2-r)"/><text class="w-lbl" x="268" y="372" text-anchor="middle">:online/:offline</text>
+        <path class="w-e w-ruby" d="M230,410 L388,420" marker-end="url(#d2-r)"/><text class="w-lbl" x="310" y="404" text-anchor="middle">drop-target:drop</text>
+        <path class="w-e w-js" d="M230,490 L386,430" marker-end="url(#d2-j)"/><text class="w-lbl" x="296" y="496" text-anchor="middle">outlet #composer</text>
+        <path class="w-e w-js" d="M500,440 L500,482" marker-end="url(#d2-j)"/><text class="w-lbl" x="510" y="466">outlet #message-area</text>
+        <path class="w-e w-ruby" d="M610,505 L768,505" marker-end="url(#d2-r)"/><text class="w-lbl" x="690" y="497" text-anchor="middle">messages:play</text>
+      </svg>
+  <div class="wkey"><span><b style="color:#ff7d90">━━</b> declared in a Ruby helper</span><span><b style="color:#e7c36b">━━</b> declared in an ERB template</span><span><b style="color:#82b2ff">━━</b> outlet</span></div>
+  <p class="fragment" style="font-size:0.7em"><strong>Eight of the eleven links live in Ruby helpers</strong> —
+  invisible to any JavaScript tool and any ERB tool. Three parsers could see them together.
+  <span class="dim">Should we build that? <em>Herb in Rails 8.2</em> closed yesterday.</span></p>
+  <aside class="notes">
+    Campfire's 35 Stimulus controllers import none of each other; these eleven links (9 events, 2 outlets) are
+    all the wiring there is. Three of the helper links are assembled from string variables
+    (rooms_helper.rb:74-80).
+    "Should we build that?" is a real question. The tool would be shared work; changes to Campfire itself go
+    through Campfire's own process. Source: "The Browser Half" (intertwingly.net).
+  </aside>
+</section>
+
+<section>
+  <span class="gen">the seams · a typed contract, half checked</span>
+  <h2>Resolvers have types too</h2>
+  <p style="font-size:0.85em">graphql-ruby checks every query against the schema.
+  Whether the Ruby behind each field keeps that contract, you find out when a request gets there.</p>
+<pre class="fragment" style="font-size:0.48em"><code><mark># three mistakes I planted in a tutorial app's LinkType</mark>
+link_type.rb:8    error    no known method `title` on Link
+link_type.rb:9    warning  `first_voter` is null: false but can resolve to nil
+link_type.rb:17   error    Integer + String</code></pre>
+  <p class="fragment" style="font-size:0.75em">From the schema's roots down, without booting the app. With the denominator:</p>
+<pre class="fragment" style="font-size:0.48em"><code>graphql: 38 field(s): 3 checked, 9 on types nothing reaches,
+         26 skipped (computed include 26)</code></pre>
+  <p class="fragment"><strong>A quiet run proves only what was followed.</strong></p>
+  <aside class="notes">
+    The opposite seam from the browser: here the contract is typed and explicit, and only one side is checked.
+    Source: "Resolvers Have Types Too" (intertwingly.net, 2026-10-04); commits c2d0664e, 67c39ac5, 7db5b10e.
+    The findings are planted: the unmodified app (howtographql/graphql-ruby, Rails 6.0, graphql 1.10) checks
+    20 of 20 fields clean. The nil one is the interesting one: three belongs_to fields are accepted as non-nil
+    only because each column is NOT NULL with a foreign key.
+    The denominator line is a second app, wandji20/graphql-n1-benchmark (Rails 8.1): it picks resolvers from an
+    environment variable at load time, so check skips them with that reason instead of guessing.
+    Not modeled yet: connections, interfaces and unions, hash_key/dig, field extensions, loads:. On a real
+    schema, expect most fields skipped on a first run, each with a reason.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">bigger than Rails · what combining the parts buys</span>
+  <div style="background:#f7f8fa;border-radius:10px;padding:6px;display:inline-block">
+    <img src="assets/cable-paths.svg" alt="Seven Action Cable paths between Ruby producers, channels and browser controllers" style="display:block;height:430px;width:auto;margin:0">
+  </div>
+  <p style="font-size:0.7em">Open a room, and its unread badge clears in every tab you have open: browser, channel, broadcast,
+  browser. <strong>No single file shows that loop.</strong> <span class="dim">With Prism, Herb and Oxc together, this
+  picture would be generated, not drawn.</span></p>
+  <aside class="notes">
+    From "The Browser Half" (intertwingly.net). The highlighted path: presence → PresenceChannel#present →
+    user_&lt;id&gt;_reads → read-rooms → rooms-list. Two of Campfire's seven channels carry no data to the browser.
+    The parts and their keepers: Prism (Ruby), Rubydex (constants), Herb (ERB), Oxc (JavaScript), graphql-ruby
+    (schemas), Spinel (native code). Parts you can get, combined, which is where the talk ends.
+    The same client/server seam exists in Inertia apps; Manu Janardhanan's "To Inertia or Not to Inertia" was
+    next in this room.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ ACT 5 — WHO BUILDS IT? · ⏱ 28:30 ═══════════════════════ -->
+
+<section data-clock="28:30">
+  <h1>Who builds it?</h1>
+  <aside class="notes">
+    ⏱ 28:30 · Act 5, who builds it.
+    People who weren't here three weeks before the talk, and it ends on you.
+  </aside>
+</section>
+
+<section>
+  <h2>A different ladder</h2>
+<pre class="timeline"><code>                pull requests merged
+                from people who aren't me
+2026-09-18        3      the first one
+2026-09-21       30
+2026-09-28       40
+2026-09-30      104
+2026-10-05      258
+<b>2026-10-08      357      from seventeen people</b></code></pre>
+  <p class="dim">And 33 forks, most of them people I've never met.</p>
+  <p class="fragment">When I started writing this talk, there was nothing to put on this slide.</p>
+  <aside class="notes">
+    Same layout as "The ladder stopped", on purpose.
+    Merged pull requests from authors other than me, cumulative by date:
+    gh pr list -R rubys/roundhouse --state merged --limit 1000 --json author,mergedAt
+    The last row is the honest one.
+  </aside>
+</section>
+
+<section>
+  <h2>What they brought</h2>
+  <ul style="font-size:0.8em">
+    <li>A Sorbet-typed app: about 1,160 emitted files.</li>
+    <li>A Rails 8 app: 255 models and controllers, 286 templates, 84 gems.</li>
+    <li>A SaaS starter kit that many apps begin from.</li>
+    <li>Postgres schemas, Packwerk packages, in-repo engines, API-only apps.</li>
+    <li class="fragment"><strong>An app with 96,000 Ruby files.</strong> <code>roundhouse check</code>
+      went from a projected two hours to seven minutes — because someone ran it there and fixed what was slow.
+      Then a hundred more commits.</li>
+    <li class="fragment">And what they built: constant resolution handed to Rubydex, a CI that does about a
+      quarter of the work, and a stranger's four-line fix to the collector.</li>
+  </ul>
+  <aside class="notes">
+    Every one of these is an app I didn't have and couldn't get. The subset of Rails this compiler handles is
+    defined by the apps people bring to it. All of it is in public pull requests.
+    The 96,000-file app is Shopify core, in public PR #171: the initial typing pass went from 756 s to 11.6 s,
+    and a full check from a projected 1.5–2 hours to 7 minutes 5 seconds.
+    "A hundred more commits" is #503: Sorbet and RBS signatures, typed gem boundaries from Tapioca RBIs,
+    constant resolution, narrowing and ActiveRecord modeling.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">what a contributor asked for</span>
+  <h2>Keep the gems</h2>
+  <blockquote style="font-size:0.8em;margin-top:0">Did some things based on Sam's roundhouse which is really really promising.
+  <span class="cite">— Tobi Lütke, 6 October 2026</span></blockquote>
+  <p style="font-size:0.75em">He ported Campfire to Ruby without Rails, and made it 15–27× faster.
+  What he wants from this compiler: that kind of speed from Rails itself, transpiled to Ruby,
+  deterministically, keeping every gem.</p>
+  <table class="cmp fragment" style="font-size:0.55em">
+    <tr><th>Mastodon's 113 runtime gems</th><th></th></tr>
+    <tr><td>no dependency on Rails or Active Support</td><td>90</td></tr>
+    <tr><td>Active Support or Active Model only</td><td>6</td></tr>
+    <tr><td>depend on Rails</td><td>17</td></tr>
+  </table>
+  <p class="fragment" style="font-size:0.75em"><strong>The cost being removed is Rails' per-request work, not Ruby.</strong></p>
+  <aside class="notes">
+    Source: "Keep the Gems" (intertwingly.net, 2026-10-06). The quote is Tobi's post,
+    x.com/tobi/status/2107605728336703996 (2026-10-06), quoting mine about that article.
+    His port: Ruby 4, Falcon serving from worker Ractors, plain modules over SQLite, Ractor message passing
+    instead of Redis; byte-identical HTML; passes the once-campfire-rust parity suite; 15–27× on the same four
+    CPU threads. Explainer: static.lutke.dev/KTK6Vb/campfire-ruby-explainer/ · repo: tobi/campfire-once-ruby-ractor.
+    Why Ruby to Ruby for an app that size: nobody will rewrite it, once or every release, and Spinel won't carry
+    its C-extension gems any time soon. Transpiled Ruby keeps calling the gems as it does today.
+    The table is Mastodon's lockfile, minus test and development tooling and rails itself. Coupling the lockfile
+    doesn't show (cocoon's helpers, rack-attack, Sidekiq's Active Job adapter) means the Rails-coupled count is
+    somewhat higher than 17. Those are the design work: expand their DSLs at build time, or give the
+    transpiled app a Rails-shaped surface to attach to.
+  </aside>
+</section>
+
+<section>
+  <h2>A rule a newcomer wrote</h2>
+  <p>A pull request made <code>check</code> quiet about a construct. The emitted program didn't run it.</p>
+  <p class="fragment">The fix wasn't to reject the pull request. It was a rule for everyone:</p>
+  <blockquote class="fragment">A diagnostic you remove is a claim that the emitted program runs.
+  <span class="cite">— AGENTS.md, invariant 6, added 2026-09-28</span></blockquote>
+  <p class="fragment dim">Now every such change has to come with a test that runs the output.
+  The project got stricter because someone new showed up.</p>
+  <aside class="notes">
+    The contributor did nothing wrong; the project hadn't said what "supported" meant. The rule is commit
+    2b2a058c, and tests/emit_and_run.rs is the harness that enforces it.
+    Contributions change the rules, not just the code.
+  </aside>
+</section>
+
+<section>
+  <h2>And around it, things moved on their own</h2>
+  <ul>
+    <li><strong>Spinel</strong>, Matz's compiler: issues and fixes flowing both ways, daily.</li>
+    <li><strong>IronRuby</strong>, revived on .NET this September, runs the emitted Campfire — and shipped a release with our fixes in it.</li>
+    <li><strong>Spinel packages</strong> for Postgres and Nokogiri, with contributors I hadn't met a month ago.</li>
+    <li><strong>Rubydex</strong> now resolves every constant Roundhouse reads.</li>
+  </ul>
+  <p class="fragment">None of these is mine. That's the point.</p>
+  <aside class="notes">
+    Spinel: github.com/matz/spinel. IronRuby: a revival on .NET (github.com/Largo/ironruby); 4.0.1 (2026-10-02)
+    includes three Roundhouse fixes, and Campfire's emitted Ruby boots on it with /rooms/1 byte-identical to
+    CRuby's. Spinel packages for Postgres and Nokogiri come from outside contributors. Rubydex resolves
+    constants; the integration is #279.
+  </aside>
+</section>
+
+<section>
+  <h2>Many targets. Many keepers.</h2>
+  <p>Matz keeps the compiler. Basecamp's tests define correct. The maintainer of Roda and Sequel
+  wrote the spec for a Rails-to-Roda converter before a line of it existed.
+  Seventeen people keep the rest.</p>
+  <p class="fragment">CSP had the first half. <strong>SQL had both.</strong></p>
+  <p class="fragment big">The bet isn't the compiler. It's the keepers.</p>
+  <aside class="notes">
+    The control group from "Except one", applied. Many targets is what CSP had; many keepers is what SQL had.
+    Jeremy Evans, who maintains Roda and Sequel, wrote the acceptance spec for a Rails-to-Roda converter
+    before any of it existed.
+    The keepers this depends on also include Prism, Herb, Oxc, graphql-ruby and Rubydex, each kept by someone
+    else.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">the room, again</span>
+  <h2>The chat on the second screen</h2>
+  <p>Written by 37signals. Changed by the people who organized this conference: their sign-in,
+  their branding, their dashboard. Twenty-three commits of Rails. Then compiled.</p>
+  <p class="fragment">Nobody touched the C. <span class="dim">Then they <a href="https://blog.saeloun.com/2026/10/04/running-campfire-with-roundhouse-and-spinel/">wrote up how</a>.</span></p>
+  <p class="fragment big">The people building this are already in this room.</p>
+  <aside class="notes">
+    Back to act 1. The organizers forked Campfire, added their sign-in, branding and dashboard in Rails, and
+    compiled it: vipulnsward/once-campfire. Their write-up: Vipul A M, "Running Campfire With Roundhouse and
+    Spinel", Saeloun blog, 2026-10-04 (linked on the slide). Three of the fixes it describes went into
+    Roundhouse.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">your app</span>
+  <h2>The ledger</h2>
+  <p>Run <code>roundhouse check</code> on your app. What it can't model yet, it says — on the exact line.</p>
+  <p class="fragment">On one contributor's Rails 8 app, a single missing entry was 359 of 836 errors.
+  <strong>One line fixed 43%.</strong></p>
+  <p class="fragment dim">The first gaps on a real app are usually a few missing entries, not a wall.
+  Each one you fix is fixed for everyone.</p>
+  <p class="fragment">If it serves GraphQL, <strong>send me the <code>graphql:</code> line.</strong>
+  <span class="dim">Counts and reasons, not your schema.</span></p>
+  <aside class="notes">
+    The most concrete invitation in the talk: bring an app, get a list, fix one line. The 359-of-836 entry was
+    human_attribute_name, behind every form label (#139).
+    For GraphQL: install from the repository (cargo install --locked --git https://github.com/rubys/roundhouse),
+    run check --continue, and send the graphql: line. Counts and reasons, not your schema.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ CLOSE · ⏱ 36:00 ═══════════════════════ -->
+
+<section data-clock="36:00">
+  <h2>The journey is just beginning</h2>
+  <p class="big">Bring an app. Bring a gap. Bring a target. Bring an oracle.</p>
+  <ul>
+    <li>Everything is public: the compiler, the benchmarks, the test lanes, these slides and their notes.</li>
+    <li>The open issues are plans, not claims. Take one somewhere I didn't think of.</li>
+    <li>Don't stop where I stopped. <strong>Don't stop where Rails stops.</strong></li>
+  </ul>
+  <aside class="notes">
+    ⏱ 36:00 · Close.
+    The four "bring" verbs are the four ways people have already come in: an app (the ledger), a gap (a missing
+    entry, a missing construct), a target (IronRuby, Roda), an oracle (an acceptance test; a before-and-after
+    run).
+    I mean the last line. The best outcome of this talk is someone in this room building something that makes
+    Roundhouse obsolete. Pune has written more 4GL code, and more Rails, than most cities on earth.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">today</span>
+  <h2>Before five o'clock</h2>
+  <ul>
+    <li>At lunch, ask your agent to <code>cargo install --git https://github.com/rubys/roundhouse</code>
+      and run <code>roundhouse check</code> on your app. <span class="dim">Or try it with no install:
+      <a href="https://rubys.github.io/roundhouse/studio/">the studio</a>.</span></li>
+    <li>Post what it says in the room. Every gap it names is a pull request someone could write.</li>
+    <li>Find me. Or find someone on this afternoon's panel of Indian speakers and ask what they'd build.</li>
+  </ul>
+  <aside class="notes">
+    Doable the same day. The exact install line:
+    cargo install --locked --git https://github.com/rubys/roundhouse --bin roundhouse
+    It needs a Rust toolchain; an agent will sort that out. The studio
+    (rubys.github.io/roundhouse/studio/) is the no-install path.
+    The panel: "Guest panel: Indian speakers", 3:10 PM Friday.
+  </aside>
+</section>
+
+<section>
+  <span class="gen">Pune · 1987</span>
+  <h2>This city has done this before</h2>
+  <p>Late 1980s: India asks to buy a Cray supercomputer. The answer is no.</p>
+  <p>1987: C-DAC is founded — here, in Pune. 1991: <strong>PARAM 8000.</strong></p>
+  <p class="fragment">They didn't copy the machine they were refused.
+  They built a different one, together, from parts they could get — and it worked.</p>
+  <aside class="notes">
+    C-DAC was founded in Pune in 1987 after India was refused a Cray. PARAM 8000 (1991) was built from Inmos
+    Transputers: parts they could get, combined. "Together" is true of C-DAC, and it's how this talk ends.
+  </aside>
+</section>
+
+<section>
+  <p class="quote-close">“Go hungry, go crazy and do something that will transform India and the world.”</p>
+  <p class="sourceline">— Dr. Vijay Bhatkar, architect of PARAM</p>
+  <aside class="notes">
+    The last line of the talk. Dr. Bhatkar credited the spirit of it to Steve Jobs.
+  </aside>
+</section>
+
+<section data-clock="40:00">
+  <h2>Start here</h2>
+  <ul style="font-size:0.8em">
+    <li>the compiler — <a href="https://github.com/rubys/roundhouse">github.com/rubys/roundhouse</a> · <span class="dim">read AGENTS.md first</span></li>
+    <li>your app — <code>roundhouse check</code>, then the ledger · <span class="dim">a pull request runs a compact CI floor; ask for <code>ci:full</code></span></li>
+    <li>the room you were in, on your laptop — <a href="https://rubys.github.io/roundhouse/campfire/docker.tgz">…/campfire/docker.tgz</a></li>
+    <li>the numbers, raw — <a href="https://rubys.github.io/roundhouse/bench/campfire/">…/bench/campfire</a> · their tests against our binary — <a href="https://rubys.github.io/roundhouse/bench/campfire-suite-spinel/">…/campfire-suite-spinel</a></li>
+    <li>the writing — <a href="https://intertwingly.net">intertwingly.net</a> · <span class="dim">Pencils Down, Notation Up · As If · The Browser Half · Generated Rails · Resolvers Have Types Too</span></li>
+  </ul>
+  <p class="sourceline">MIT / Apache-2.0. Fork it. Slides and speaker notes are public.</p>
+  <aside class="notes">
+    ⏱ 40:00 → questions. Questions are already in the room on the second screen.
+    A pull request runs a compact CI floor; the full matrix runs on request (the ci:full label).
+    docker.tgz is the conference chat's app, packaged to run on your laptop.
+  </aside>
+</section>
+
+<!-- ═══════════════════════ VALVES — after the close, during Q&A · ⏱ — ═══════════════════════ -->
+
+<section data-background-iframe="https://rubys.github.io/roundhouse/studio/" data-background-interactive>
+  <span class="tag">encore</span>
+  <aside class="notes">
+    An encore, if there's time. The studio runs a Rails blog compiled in the browser, with "running app" and
+    "tests" tabs. Four beats:
+    1. Types: in app/views/articles/index.html.erb, hover @articles; it's typed from the controller with no
+    annotations.
+    2. Live: change the h1 "Articles"; the running app morphs in place.
+    3. Red: in app/models/article.rb change the body's length: { minimum: 10 } to minimum: 3; the test
+    "validates body minimum length" goes red, because its body, "Short", is now valid.
+    4. Green: in test/models/article_test.rb change "Short" to "Hi"; green again.
+    Try it: rubys.github.io/roundhouse/studio/
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <h2>Why it lived where they died</h2>
+  <ul>
+    <li><strong>The escape hatch.</strong> Hit the edge of the conventions, write a <code>def</code>.
+        Same file, three lines down.</li>
+    <li><strong>No vendor.</strong> No runtime license. A host language anyone could run anywhere.</li>
+  </ul>
+  <p class="fragment">Exactly the two things that killed the 4GLs.
+  <strong>It was the right trade in 2004.</strong></p>
+  <aside class="notes">
+    Appendix. The escape hatch is why Rails lived where the 4GLs died: hit the edge of the conventions, write a
+    def, same file. It was the right trade in 2004. The next slide is what it cost.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <h2>Three ways to ship the next release</h2>
+  <table style="font-size:0.8em">
+    <tr><th></th><th>compile</th><th>port again</th><th>maintain the port</th></tr>
+    <tr><td>a Campfire change lands</td><td>once</td><td>once, plus what the prompt restates</td><td>twice</td></tr>
+    <tr><td>an improvement helps</td><td>every app on the compiler</td><td>every app on the framework</td><td>this app</td></tr>
+    <tr><td>the Rails app as oracle</td><td>required</td><td>required</td><td>optional — so it decays</td></tr>
+  </table>
+  <aside class="notes">
+    Appendix, from "As If" (intertwingly.net, 2026-09-28): the answer to "why not just port it, like
+    37signals did?" The second row is the keepers argument in table form.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+    <span class="gen">bigger than Rails · the parts already exist</span>
+  <h2>Every piece has a keeper. Nobody holds them together.</h2>
+  <ul style="font-size:0.8em">
+    <li>Ruby: Prism, and Rubydex for constants.</li>
+    <li>ERB as HTML: Herb, in Rails 8.2.</li>
+    <li>JavaScript: Oxc.</li>
+    <li>GraphQL: graphql-ruby's schema.</li>
+    <li>Native code: Spinel.</li>
+  </ul>
+  <p class="dim" style="font-size:0.75em">Combined: a check across the seams, a language server that jumps from a Ruby helper to the
+  JavaScript it wires, a request trace that follows a broadcast into the browser.</p>
+  <aside class="notes">
+    Appendix. The parts already exist, each with its own keeper. What's missing is holding them together.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <h2>What they built that I wouldn't have</h2>
+  <ul>
+    <li>Constant resolution handed to <strong>Rubydex</strong>, an indexer someone else maintains.</li>
+    <li>CI rebuilt so a pull request runs a compact floor, with the full matrix on request
+      <span class="dim">— about three-quarters less runner work, by their estimate.</span></li>
+    <li>Case/in pattern matching. Enums the way Rails really does them. Request params that run.</li>
+    <li>A stranger profiled the binary and deleted four lines from the collector.</li>
+  </ul>
+  <p class="fragment"><strong>Most of them used agents, and every one of them held the agent to a reference.</strong></p>
+  <aside class="notes">
+    Appendix. Each is in a public pull request: Rubydex integration (#279); the CI rebuild (#313, whose author
+    estimated about 74% less runner work); pattern matching (#193); enums and params (#201–#256); and a
+    four-line change to the collector, worth 45% at moderate concurrency on the contributor's machine and 18%
+    on ours.
+    Every one of them checked the agent against a reference: real ActiveSupport, the Spinel binary, a
+    before-and-after run across public apps, tests that fail when the change is reverted. Nobody asked them to.
+  </aside>
+</section>
+
+<section>
+  <h2>Why nobody noticed</h2>
+  <p class="big"><code>has_many</code> <em>is</em> <code>define_method</code>.</p>
+  <p>Lisp did language-as-library with macros, at compile time. Ruby did it at runtime.
+  At the source level both are method calls, so the boundary is invisible —
+  and it runs through the middle of every model, a <code>def</code> three lines below a <code>belongs_to</code>.</p>
+  <aside class="notes">
+    Appendix. Prior art: Racket's "Languages as Libraries" (PLDI 2011).
+  </aside>
+</section>
+
+<section>
+  <h2>Re-answered</h2>
+  <p>Rails answers <code>belongs_to</code> at boot. Then, every request, it re-answers
+  the questions that follow from it: which columns, which table, which route, which template, which filters.</p>
+  <p class="fragment">Campfire, same CRuby, same YJIT, same Puma — only the framework melted:
+  <strong>14×</strong> on the room page, <strong>13×</strong> on the messages feed.</p>
+  <aside class="notes">
+    Appendix. Same CRuby, same YJIT, same Puma shape; only the framework is gone.
+    rubys.github.io/roundhouse/bench/campfire/ (run 20261007-202924, commit 8fda5b888e69): /rooms/1 291 → 4,138 req/s; /rooms/1/messages 604 → 7,602. Rails serves message fragments
+    from its Redis cache and the emitted app from its own; this is what remains despite caching.
+    The receipt is a later appendix slide.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <span class="gen">why is there no Redis?</span>
+<pre class="chain"><code>GVL
+  → must fork for cores
+    → separate heaps
+      → need a broker
+        → Redis</code></pre>
+  <p>That isn't a chat design. It's a runtime workaround, and the application inherited it.
+  Remove the first link and the rest falls out.</p>
+  <aside class="notes">
+    Appendix. The honest half: Redis was also buying a memory model. In one process, the subscription registry
+    is shared mutable state. The next slide asks whether one process is the right shape at all.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <span class="gen">the concurrency shape</span>
+  <h2>Threads, fibers, processes</h2>
+  <p>The compiled binary runs green threads in one process. At twelve workers the collector
+  has the world stopped more than half the time.</p>
+  <p class="fragment">Under load, fibers measured faster than threads on both apps we tried.
+  One heap per core might be the answer. I don't know yet.</p>
+  <p class="fragment dim"><em>When Rails Met Fibers: Migrating Sidekick from Puma to Falcon.</em></p>
+  <aside class="notes">
+    Appendix. September 2026 measurements: 59% of wall time stopped at twelve workers; about 6 of 12 CPUs busy
+    while Puma uses all of them. Blog: fibers 20.5k vs threads 14.8k req/s on one worker; Campfire at 16
+    clients: 50.8 vs 19.0.
+    This is the last step of the plan in "Keep the Gems": Falcon and Ractors, once each request is cheap enough
+    that the server model is what matters. Tobi's port already runs on Falcon. Samuel Williams, Katie Lawhorn
+    and Tavian Barnes opened the conference with the production version of this question.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <span class="gen">agents in the loop</span>
+  <h2>A checker that doesn't need the app running</h2>
+  <p>Zero error diagnostics is the contract. It answers in seconds, from source:
+  which filters run, where the N+1 is, what can be nil.</p>
+  <p class="fragment">An agent that writes Rails can ask it before it runs a single test.
+  <span class="dim">In our trials, agents reached for it unprompted four times in five.</span></p>
+  <p class="fragment dim"><em>Agents on Rails · Loop Engineering: Teaching an AI Agent to Check Its Own Homework ·
+  From Prompt to Rails · RubyLLM 2.0: Beyond Agents.</em></p>
+  <aside class="notes">
+    Appendix. Talks at this conference about agents writing or checking Rails: Irina Nazarova (benchmarking
+    models for the Rails Foundation), Ratnadeep Deshmane (agents checking their own homework), Paweł
+    Strzałkowski (prompt to app), Carmine Paolino (RubyLLM).
+    Put roundhouse check, or its MCP server, in your loop and tell me what it misses.
+    "Four times in five": scripts/mcp-ab, 2026-09-15; filtered queries took one task from 152 s to 14 s.
+    A small sample.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <span class="gen">re-answered · the receipt · messages/_message.html.erb, once per message</span>
+  <div class="cols">
+    <div>
+      <h3>Rails, every request</h3>
+<pre><code><mark># which route: to_param on each model, an options
+# hash, RouteSet#url_for, Journey's formatter</mark>
+room_at_message_path(message.room, message)
+
+<mark># which table, which columns: Association#reader,
+# load_target, a scope, the StatementCache</mark>
+message.room</code></pre>
+    </div>
+    <div>
+      <h3>Lowered, once</h3>
+<pre><code>def self.room_at_message_path(room_id, message_id)
+  "/rooms/#{room_id}/@#{message_id}"
+end
+RouteHelpers.room_at_message_path(
+  message.room.id, message.id)
+
+Db.prepare("SELECT id, created_at, creator_id, name,
+            type, updated_at FROM rooms WHERE id = "
+           + Db.escape_int(@room_id) + " LIMIT 1")</code></pre>
+    </div>
+  </div>
+  <aside class="notes">
+    Appendix. Verbatim from roundhouse --target ruby, 2026-09-12.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <span class="gen">sees the whole program</span>
+  <h2>What a library is not allowed to do</h2>
+<pre><code>render(template, locals)           → String    <mark># what every partial does</mark>
+render(template, locals, buffer)   → nil       <mark># since 7.1; only streaming uses it</mark></code></pre>
+  <p>A compiler sees every caller, so it can rewrite every append site to write into one buffer.
+  <strong>2.4× on the page, from that alone.</strong></p>
+  <aside class="notes">
+    Appendix. 490 → 1,173 req/s at 16 clients; 11.5 MB → 4.5 MB allocated per request.
+  </aside>
+</section>
+
+<section>
+  <span class="tag">appendix</span>
+  <h2>Martin, 1982. Rails World, 2026.</h2>
+  <p class="dim">"The human reads the spec, an agent writes the 3GL" is James Martin's pitch,
+  restated almost word for word: <em>Application Development Without Programmers.</em></p>
+  <p>This time it's true. The difference isn't the promise. <strong>It's who owns the compiler.</strong></p>
+  <aside class="notes">
+    Appendix. For the question "isn't this the 1980s CASE pitch again?" James Martin, Application Development
+    Without Programmers (1982).
+  </aside>
+</section>
+
+</div></div>
+<script type="module" src="/src/deck.js"></script>
+</body>
+</html>

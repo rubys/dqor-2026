@@ -1,0 +1,169 @@
+:root {
+  --panel:  #12181c;
+  --paper:  #e7e3d9;
+  --lamp:   #ff9d2e;
+  --rule:   #2b363d;
+  --dim:    #8b949b;
+}
+
+.reveal-viewport { background: var(--panel); }
+
+.reveal {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-weight: 300;
+  font-size: 40px;
+  color: var(--paper);
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--paper);
+  text-transform: none;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 0.45em;
+}
+.reveal h1 { font-size: 2.1em; }
+.reveal h2 { font-size: 1.3em; }
+.reveal h3 { font-size: 1.1em; font-weight: 400; color: var(--dim); }
+
+.reveal section { text-align: left; }
+.reveal p { line-height: 1.4; margin: 0.5em 0; }
+.reveal strong { font-weight: 600; color: var(--lamp); }
+.reveal em { font-style: italic; color: var(--paper); }
+.reveal a { color: var(--lamp); text-decoration: none; border-bottom: 1px solid var(--rule); }
+
+/* machine words are monospace; human words are not. that distinction is the talk. */
+.reveal pre {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.6em;
+  line-height: 1.45;
+  box-shadow: none;
+  background: rgba(0,0,0,0.28);
+  border-left: 2px solid var(--rule);
+  padding: 0.9em 1.1em;
+  width: auto;
+  margin: 0.5em 0;
+}
+.reveal code { font-family: "IBM Plex Mono", monospace; }
+.reveal :not(pre) > code { color: var(--lamp); font-size: 0.9em; }
+.reveal pre mark { background: none; color: var(--lamp); font-weight: 600; }
+.reveal pre b { color: var(--lamp); font-weight: 600; }
+.reveal pre.chain { border-left-color: var(--lamp); font-size: 0.7em; }
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6em; align-items: start; }
+.cols pre { font-size: 0.45em; }
+.cols h3 { margin-bottom: 0.4em; }
+
+.gen {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.5em;
+  color: var(--lamp);
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.4em;
+  margin-bottom: 1em;
+  display: block;
+}
+
+/* stage-direction tag: ADD IF SHORT · VALVE · DEMO */
+.tag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.4em;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule);
+  padding: 0.15em 0.6em;
+  display: inline-block;
+  margin-bottom: 1.2em;
+}
+
+.big { font-size: 1.5em; font-weight: 600; line-height: 1.2; }
+.dim { color: var(--dim); }
+.reveal li { margin-bottom: 0.4em; line-height: 1.35; }
+
+.reveal table { font-size: 0.75em; border-collapse: collapse; }
+.reveal table td, .reveal table th {
+  border: none; border-bottom: 1px solid var(--rule);
+  padding: 0.35em 1.2em 0.35em 0; text-align: left;
+}
+.reveal table th { color: var(--dim); font-weight: 400; }
+.reveal table code { font-size: 1em; color: var(--paper); }
+.reveal table.cmp td:not(:first-child), .reveal table.cmp th:not(:first-child) { text-align: right; }
+.reveal table.cmp td:last-child { color: var(--lamp); }
+
+.timeline { font-size: 0.7em !important; line-height: 1.7 !important; }
+
+.reveal blockquote {
+  width: auto; margin: 0.8em 0; padding: 0.4em 0 0.4em 1em;
+  background: none; box-shadow: none; font-style: normal;
+  border-left: 3px solid var(--lamp);
+  font-size: 1.05em; line-height: 1.4;
+}
+.reveal blockquote .cite { display: block; margin-top: 0.6em; font-size: 0.6em; color: var(--dim); }
+.reveal .quote-close { font-size: 1.7em; font-weight: 600; line-height: 1.25; }
+
+.lede { font-size: 1.15em; }
+.sourceline { font-size: 0.5em; color: var(--dim); margin-top: 1.2em; }
+.holding { font-size: 0.7em; color: var(--dim); letter-spacing: 0.04em; }
+
+.qr {
+  width: 6.5em; height: 6.5em;
+  border: 1px dashed var(--rule);
+  display: grid; place-items: center; text-align: center;
+  color: var(--dim); font-size: 0.5em;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.reveal .progress { color: var(--lamp); }
+.reveal .controls { color: var(--rule); }
+
+/* the three messages: all dim, the current one lit */
+.three { list-style: none; margin: 0.4em 0 0 0; padding: 0; counter-reset: msg; }
+.reveal .three li {
+  counter-increment: msg; position: relative; padding-left: 1.8em;
+  font-size: 1.05em; font-weight: 600; line-height: 1.25; margin-bottom: 0.85em;
+  color: var(--dim);
+}
+.three li::before {
+  content: counter(msg); position: absolute; left: 0; top: 0.05em;
+  font-family: "IBM Plex Mono", monospace; font-weight: 400; color: var(--rule);
+}
+.three li .sub { display: block; font-weight: 300; font-size: 0.72em; margin-top: 0.25em; }
+.reveal .three li.on, .reveal .three.all li { color: var(--paper); }
+.three li.on::before, .three.all li::before { color: var(--lamp); }
+.three li.on .sub, .three.all li .sub { color: var(--dim); }
+/* "Take out your phone." — copied from rubyconf-2026's src/deck.css */
+.reveal .qr-card { background: #fff; display: inline-block; padding: 22px; border-radius: 14px; }
+.reveal .qr-card img { display: block; width: 340px; height: 340px; margin: 0; }
+.reveal .url { font-family: "SF Mono", Menlo, monospace; font-size: 0.66em; color: #9fd8b4; }
+.reveal .understated { font-size: 1.1em; text-transform: none; }
+.reveal .solo { display: flex; justify-content: center; }
+.reveal .solo iframe { width: 1160px; height: 655px; border: 1px solid #333; border-radius: 10px; background: #fff; }
+.reveal .duo { display: flex; gap: 20px; justify-content: center; }
+.reveal .duo iframe { width: 610px; height: 640px; border: 1px solid #333; border-radius: 10px; background: #fff; }
+.reveal pre.ladder { width: max-content; max-width: 98%; margin: 0 auto; box-shadow: none; border-left: none; }
+.reveal pre.ladder code { max-height: none; font-size: 0.78em; line-height: 1.38; background: transparent; color: #b5e8c8; overflow-x: auto; }
+.reveal pre.ladder a { color: inherit; text-decoration: underline; text-decoration-color: rgba(181, 232, 200, 0.45); text-underline-offset: 3px; }
+.reveal pre.ladder a:hover { color: #eafff2; text-decoration-color: #eafff2; }
+
+/* ?rehearse HUD: elapsed · ⏱ target, bottom-left, click to restart. */
+#rehearse-hud {
+  position: fixed;
+  bottom: 14px;
+  left: 16px;
+  z-index: 50;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 15px;
+  color: #6fa885;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+#rehearse-hud.over {
+  color: #ff6b5e;
+}

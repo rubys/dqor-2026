@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Snapshot the roundhouse blog demo
+# out of the latest green main CI run's Pages artifact, into
+# demos/roundhouse/. Commit the result: the deck's dev server mounts
+# it at /roundhouse/ so `npm run dev` rehearses against exactly this
+# snapshot, offline, regardless of what roundhouse main does later.
+#
+# Note: actions/upload-pages-artifact retains the artifact ~1 day, so
+# this only works shortly after a roundhouse push to main. That's why
+# the snapshot is committed rather than fetched at deploy time.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# Pages deploys come from the "Full validation" workflow, not every CI
+# run, so take the newest green main run that still has the artifact.
+run_id=""
+for id in $(gh run list -R rubys/roundhouse -b main -s success -L 30 \
+    --json databaseId -q '.[].databaseId'); do
+  if [ -n "$(gh api "repos/rubys/roundhouse/actions/runs/$id/artifacts" \
+      -q '.artifacts[] | select(.name == "github-pages" and .expired == false) | .id')" ]; then
+    run_id=$id
+    break
+  fi
+done
+[ -n "$run_id" ] || { echo "no unexpired github-pages artifact on main" >&2; exit 1; }
+echo "syncing from rubys/roundhouse run $run_id"
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+gh run download "$run_id" -R rubys/roundhouse -n github-pages -D "$tmp"
+
+# The Pages artifact is a single artifact.tar of _site/. Pull only the
+# demo surfaces — browse/*.tgz archives are large and not needed.
+mkdir -p "$tmp/site"
+tar -xf "$tmp"/artifact.tar -C "$tmp/site"
+rm -rf demos/roundhouse
+mkdir -p demos/roundhouse
+for d in blog; do
+  if [ -d "$tmp/site/$d" ]; then
+    mv "$tmp/site/$d" demos/roundhouse/
+  else
+    echo "warning: $d/ not present in artifact" >&2
+  fi
+done
+
+du -sh demos/roundhouse/* | sed 's/^/  /'
+echo "done — review, then commit demos/roundhouse"

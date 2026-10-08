@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 578" role="img" aria-label="Seven Action Cable paths between Ruby producers, channels and browser controllers. Opening a room sends present to PresenceChannel, which broadcasts on the user's reads stream, which clears the unread badge in every open tab.">
+<rect width="100%" height="100%" fill="#f7f8fa"/>
+<style>
+.box{fill:#ffffff;stroke:#c3cbd4;stroke-width:1.2}
+.box.ruby{stroke:#b0283f}.box.js{stroke:#1d5bbf}.box.acc{stroke:#0b7a68;stroke-width:2}.box.ghost{stroke-dasharray:4 4}
+.t{fill:#1b2129;font:500 13px ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.s{fill:#5a6572;font:11px -apple-system,"Segoe UI",Helvetica,Arial,sans-serif}
+.h{fill:#5a6572;font:500 11px ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.08em;text-transform:uppercase}
+.lbl{fill:#1b2129;font:11px ui-monospace,"SF Mono",Menlo,Consolas,monospace}.lbl.acc{fill:#0b7a68}
+.e{fill:none;stroke:#5a6572;stroke-width:1.4}.e.acc{stroke:#0b7a68;stroke-width:2}.e.dash{stroke-dasharray:5 4}
+.e.ruby{stroke:#b0283f}.e.erb{stroke:#9a5f00}.e.js{stroke:#1d5bbf;stroke-width:2.6}
+</style>
+        <defs>
+          <marker id="f1-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5a6572"/></marker>
+          <marker id="f1-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b7a68"/></marker>
+        </defs>
+        <text class="h" x="130" y="22" text-anchor="middle">Ruby · server</text>
+        <text class="h" x="490" y="22" text-anchor="middle">Action Cable</text>
+        <text class="h" x="850" y="22" text-anchor="middle">Browser</text>
+
+        <!-- R1 messages -->
+        <rect class="box ruby" x="10" y="40" width="240" height="46" rx="6"/>
+        <text class="t" x="22" y="59">Message#broadcast_create</text><text class="s" x="22" y="76">after MessagesController#create</text>
+        <rect class="box" x="370" y="40" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="59">[room, :messages]</text><text class="s" x="382" y="76">RoomMessagesChannel · Turbo stream</text>
+        <rect class="box js" x="730" y="40" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="59">turbo_stream_from</text><text class="s" x="742" y="76">rooms/show · appends to #messages</text>
+        <path class="e" d="M250,63 H368" marker-end="url(#f1-a)"/><text class="lbl" x="310" y="55" text-anchor="middle">append_to</text>
+        <path class="e" d="M610,63 H728" marker-end="url(#f1-a)"/><text class="lbl" x="670" y="55" text-anchor="middle">HTML</text>
+
+        <!-- R2 unreads -->
+        <rect class="box ruby" x="10" y="115" width="240" height="46" rx="6"/>
+        <text class="t" x="22" y="134">#broadcast_unread_room</text><text class="s" x="22" y="151">Message · once per room member</text>
+        <rect class="box" x="370" y="115" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="134">user_‹id›_unreads</text><text class="s" x="382" y="151">UnreadRoomsChannel</text>
+        <rect class="box acc" x="730" y="115" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="134">rooms-list</text><text class="s" x="742" y="151">dispatches rooms-list:read / :unread</text>
+        <path class="e" d="M250,138 H368" marker-end="url(#f1-a)"/><text class="lbl" x="310" y="130" text-anchor="middle">broadcast</text>
+        <path class="e" d="M610,138 H728" marker-end="url(#f1-a)"/><text class="lbl" x="670" y="130" text-anchor="middle">{ roomId }</text>
+
+        <!-- R3 presence (RPC, leftward) -->
+        <rect class="box ruby acc" x="10" y="200" width="240" height="46" rx="6"/>
+        <text class="t" x="22" y="219">PresenceChannel#present</text><text class="s" x="22" y="236">marks the membership read</text>
+        <rect class="box acc" x="370" y="200" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="219">PresenceChannel</text><text class="s" x="382" y="236">actions only · nothing broadcast on it</text>
+        <rect class="box js acc" x="730" y="200" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="219">presence</text><text class="s" x="742" y="236">room opened or tab made visible</text>
+        <path class="e acc" d="M730,223 H612" marker-end="url(#f1-acc)"/><text class="lbl acc" x="670" y="215" text-anchor="middle">send present</text>
+        <path class="e acc" d="M370,223 H252" marker-end="url(#f1-acc)"/><text class="lbl acc" x="310" y="215" text-anchor="middle">#present</text>
+
+        <!-- R4 reads -->
+        <rect class="box acc" x="370" y="275" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="294">user_‹id›_reads</text><text class="s" x="382" y="311">ReadRoomsChannel</text>
+        <rect class="box js acc" x="730" y="275" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="294">read-rooms</text><text class="s" x="742" y="311">dispatches read-rooms:read</text>
+        <path class="e acc" d="M130,246 V298 H368" marker-end="url(#f1-acc)"/><text class="lbl acc" x="250" y="290" text-anchor="middle">broadcast { room_id }</text>
+        <path class="e acc" d="M610,298 H728" marker-end="url(#f1-acc)"/><text class="lbl acc" x="670" y="290" text-anchor="middle">JSON</text>
+        <path class="e acc dash" d="M970,292 C996,292 996,146 972,146" marker-end="url(#f1-acc)"/>
+        <text class="lbl acc" x="992" y="219" text-anchor="middle" transform="rotate(-90 992 219)">DOM event</text>
+
+        <!-- R5 sidebar -->
+        <rect class="box ruby" x="10" y="360" width="240" height="46" rx="6"/>
+        <text class="t" x="22" y="379">Rooms::*Controller</text><text class="s" x="22" y="396">opens · closeds · directs · involvements</text>
+        <rect class="box" x="370" y="360" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="379">:rooms · [user, :rooms]</text><text class="s" x="382" y="396">Turbo streams</text>
+        <rect class="box js" x="730" y="360" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="379">turbo_stream_from</text><text class="s" x="742" y="396">sidebar · prepend / replace / remove</text>
+        <path class="e" d="M250,383 H368" marker-end="url(#f1-a)"/><text class="lbl" x="310" y="375" text-anchor="middle">prepend_to</text>
+        <path class="e" d="M610,383 H728" marker-end="url(#f1-a)"/><text class="lbl" x="670" y="375" text-anchor="middle">HTML</text>
+
+        <!-- R6 typing (both directions) -->
+        <rect class="box ruby" x="10" y="435" width="240" height="46" rx="6"/>
+        <text class="t" x="22" y="454">#start · #stop</text><text class="s" x="22" y="471">TypingNotificationsChannel</text>
+        <rect class="box" x="370" y="435" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="454">typing_notifications:‹room›</text><text class="s" x="382" y="471">broadcast_to @room</text>
+        <rect class="box js" x="730" y="435" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="454">typing-notifications</text><text class="s" x="742" y="471">shows who is typing</text>
+        <path class="e" d="M730,447 H612" marker-end="url(#f1-a)"/><text class="lbl" x="670" y="429" text-anchor="middle">send start/stop</text>
+        <path class="e" d="M370,447 H252" marker-end="url(#f1-a)"/>
+        <path class="e" d="M250,469 H368" marker-end="url(#f1-a)"/>
+        <path class="e" d="M610,469 H728" marker-end="url(#f1-a)"/><text class="lbl" x="670" y="496" text-anchor="middle">{ action, user }</text>
+
+        <!-- R7 heartbeat -->
+        <rect class="box ruby ghost" x="10" y="515" width="240" height="46" rx="6"/>
+        <text class="t" x="22" y="534">class HeartbeatChannel</text><text class="s" x="22" y="551">empty: no stream, no actions</text>
+        <rect class="box ghost" x="370" y="515" width="240" height="46" rx="6"/>
+        <text class="t" x="382" y="534">HeartbeatChannel</text><text class="s" x="382" y="551">used for connection state only</text>
+        <rect class="box js" x="730" y="515" width="240" height="46" rx="6"/>
+        <text class="t" x="742" y="534">refresh-room</text><text class="s" x="742" y="551">reconnect → GET missed messages</text>
+        <path class="e dash" d="M612,538 H728" marker-start="url(#f1-a)" marker-end="url(#f1-a)"/><text class="lbl" x="670" y="530" text-anchor="middle">up / down</text>
+      </svg>
